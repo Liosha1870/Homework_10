@@ -13,63 +13,47 @@ class Name(Field):
     fl = True
     
 class Phone(Field):
-    def __init__(self, value: str) -> None:
-        super().__init__(value)
-        if not self.is_valid():
-            raise ValueError("Номер телефону повинен складатися з 10 цифр")
-
-    def is_valid(self):
-        return len(self.value) == 10 and self.value.isdigit()
+    def __init__(self, phone: str) -> None:
+        new_phone = phone.strip()
+        for c in '+( )-.':
+            new_phone = new_phone.replace(c, "")
+        if len(new_phone) == 10 and new_phone.isdigit():
+            super().__init__(phone)
+        else:
+            raise ValueError(f"{phone} - incorrect phone number")
+            
+    def __str__(self):
+        return self.value
     
     fl = False
 class Record:
 
-    def __init__(self, name:Name)->None:
-        self.name = name
-        self.list_phones = []    
+    def __init__(self, name) -> None:
+        self.name = Name(name)
+        self.phones = []    
     
     def __str__(self):
         return f'{self.name} - {self.list_phones}'    
     
-    def add_phone(self, phone:Phone):
-        if phone.isvalid():
-            self.list_phones.append(phone)
-        else:
-            return 'Invalid phone number'
+    def add_phone(self, phone):
+        self.phones.append(Phone(phone))
     
-    def edit_phone(self, phone:Phone, new_phone:Phone)-> str:
-        temp_list_phone = []
-        str_result =''
-        for ph in self.list_phones:
-            if ph != phone:
-                temp_list_phone.append(ph)
-            else:
-                temp_list_phone.append(new_phone)
-                str_result += f'Phone {phone} updated to {new_phone}\n'
-        self.list_phones = temp_list_phone
-        if not str_result:
-            return f'Phone {phone} not found'
-        return str_result   
-        
-    def remove_phone(self, phone:Phone):
-        temp_list_phone = []
-        str_result =''
-        for ph in self.list_phones:
-            if ph!= phone:
-                temp_list_phone.append(ph)
-            else:
-                str_result += f'{phone} is removed'
-        self.list_phones = temp_list_phone
-        if not str_result:
-            return f'Phone {phone} not found'
-        return str_result
+    def edit_phone(self, old_phone, new_phone):
+        for i, p in enumerate(self.phones):
+            if p.value == old_phone:
+                self.phones[i] = Phone(new_phone)
+                return 
+        raise ValueError(f"Number {old_phone} not found") 
+    def remove_phone(self, phone):
+        for p in self.phones:
+            if p.value == phone:
+                self.phones.remove(p)
     
-    def find_phone(self, phone: Phone):
-        found_phones = [str(ph) for ph in self.list_phones if str(ph) == str(phone)]
-        if found_phones:
-            return ", ".join(found_phones)
-        else:
-            return f"Phone {phone} not found"
+    def find_phone(self, phone):
+        for p in self.phones:
+            if p.value == phone:
+                return p
+        return None
 
 
 class AddressBook(UserDict):
@@ -77,18 +61,12 @@ class AddressBook(UserDict):
     def add_record(self, record:Record):
         self.data[record.name.value] = record
     
-    def delete(self, name:str)-> str:
+    def delete(self, name):
         if name in self.data:
             del self.data[name]
-            return f'Contact {name} is deleted'
-        else:
-            return f'Contact {name} not found'
 
-    def find(self, name:str)-> str:
-        if name in self.data:
-            return self.data[name]
-        else:
-            return f'Contact {name} not found'
+    def find(self, name):
+        return self.data.get(name)
 
 def parse_command(user_input, address_book):
     if user_input.startswith("/add"):
@@ -158,4 +136,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
